@@ -1,7 +1,7 @@
 """ Defines the LinePlot class.
 """
 
-from __future__ import with_statement
+
 
 # Standard library imports
 import warnings
@@ -66,7 +66,7 @@ class SmithCircle(AbstractOverlay):
 
         def center_radius(mapper): #data_low, data_high, screen_low, screen_high):
             map = mapper.map_screen
-            return map(0), map(1) - map(0)
+            return list(map(0)), list(map(1)) - list(map(0))
 
         with gc:
             gc.set_stroke_color(self.line_color_)
@@ -313,12 +313,12 @@ class SmithPlot(Plot):
         =======
         [renderers] -> list of renderers created in response to this call to plot()
         """
-        print "plot"
+        print("plot")
 
         if len(data) == 0:
             return
 
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             data = (data,)
 
         # TODO: support lists of plot types
@@ -381,11 +381,11 @@ class SmithPlot(Plot):
         return self.plots[name]
 
     def plot_circle(self, data, name=None, origin=None, **styles):
-        print "plot_circle"
+        print("plot_circle")
         if len(data) == 0:
             return
 
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             data = (data,)
 
         if name is None:
@@ -437,7 +437,7 @@ class SmithPlot(Plot):
                                        bgcolor="white",
                                        **styles)
                                        
-            print "circle:", vmap.range
+            print("circle:", vmap.range)
         
             self.add(plot)
             new_plots.append(plot)
@@ -451,7 +451,7 @@ class SmithPlot(Plot):
     #------------------------------------------------------------------------
 
     def _bounds_changed(self, old, new):
-        print "_bounds_changed"
+        print("_bounds_changed")
         super(self.__class__, self)._bounds_changed(old, new)
         if self.value_range.high_setting == 'auto':
             self.index_range.high_setting = 'auto'
@@ -476,55 +476,55 @@ class SmithPlot(Plot):
 
 
     def _bounds_items_changed(self, event):
-        print "_bounds_items_changed"
+        print("_bounds_items_changed")
         super(self.__class__, self)._bounds_items_changed(event)
 
     def _position_changed(self, old, new):
-        print "_position_changed"
+        print("_position_changed")
         super(self.__class__, self)._position_changed(old, new)
 
     def _position_items_changed(self, event):
-        print "_position_items_changed"
+        print("_position_items_changed")
         super(self.__class__, self)._position_items_changed(event)
 
     def _origin_changed(self):
-        print "_origin_changed"
+        print("_origin_changed")
         super(self.__class__, self)._origin_changed()
 
     def _orientation_changed(self):
-        print "_orientation_changed"
+        print("_orientation_changed")
         super(self.__class__, self)._orientation_changed()
 
     def _index_mapper_changed(self, old, new):
-        print "_index_mapper_changed"
+        print("_index_mapper_changed")
         super(self.__class__, self)._index_mapper_changed(old, new)
 
     def _value_mapper_changed(self, old, new):
-        print "_value_mapper_changed"
+        print("_value_mapper_changed")
         super(self.__class__, self)._value_mapper_changed(old, new)
 
     def _x_grid_changed(self, old, new):
-        print "_x_grid_changed"
+        print("_x_grid_changed")
         super(self.__class__, self)._x_grid_changed(old, new)
 
     def _y_grid_changed(self, old, new):
-        print "_y_grid_changed"
+        print("_y_grid_changed")
         super(self.__class__, self)._y_grid_changed(old, new)
 
     def _x_axis_changed(self, old, new):
-        print "_x_axis_changed"
+        print("_x_axis_changed")
         super(self.__class__, self)._x_axis_changed(old, new)
 
     def _y_axis_changed(self, old, new):
-        print "_y_axis_changed"
+        print("_y_axis_changed")
         super(self.__class__, self)._y_axis_changed(old, new)
 
     def _index_scale_changed(self, old, new):
-        print "_index_scale_changed"
+        print("_index_scale_changed")
         super(self.__class__, self)._index_scale_changed(old, new)
 
     def _value_scale_changed(self, old, new):
-        print "_value_scale_changed"
+        print("_value_scale_changed")
         super(self.__class__, self)._value_scale_changed(old, new)
 
     #------------------------------------------------------------------------

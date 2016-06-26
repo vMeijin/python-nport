@@ -1,10 +1,8 @@
-from __future__ import division
-
 import numpy as np
 
-from .base import Z, Y, S, T, H, G, ABCD
+from .base import HYBRID, INVERSE_HYBRID, TRANSMISSION
 from .base import IMPEDANCE, ADMITTANCE, SCATTERING, SCATTERING_TRANSFER
-from .base import HYBRID, INVERSE_HYBRID, TRANSMISSION 
+from .base import Z, Y, S, T, H, G, ABCD
 from .nport import NPortMatrix, NPort
 from .tline import GammaZ0TransmissionLine, unwrap_sqrt, unwrap_log
 
@@ -21,6 +19,7 @@ class TwoPortMatrix(NPortMatrix):
     :type z0: :class:`float`
 
     """
+
     def convert(self, type, z0=None):
         """Convert to another 2-port matrix representation
         
@@ -176,7 +175,7 @@ class TwoPortMatrix(NPortMatrix):
                 result = np.asarray([[g22, -g12], [-g21, g11]]) / dg
             elif type == INVERSE_HYBRID:
                 result = self
-                
+
         if result is not None:
             return NPortMatrix(result, type, z0)
         else:
@@ -220,8 +219,8 @@ class TwoPortMatrix(NPortMatrix):
 
     def is_stable_k(self):
         k, delta = self.stability_k()
-        return k > 1 and np.abs(delta) < 1            
-    
+        return k > 1 and np.abs(delta) < 1
+
     def is_stable_mu(self):
         return self.stability_mu() > 1
 
@@ -242,7 +241,7 @@ class TwoPort(NPort):
         # for two-ports, we can operate on arrays, speeding things up a lot
         # TODO: add other conversions (now handled by NPort.convert())
         z0 = self.convert_z0test(type, z0)
-        
+
         if self.type == ABCD and type == S:
             # via scattering transfer parameters
             t = self.convert(T, z0)
@@ -254,7 +253,7 @@ class TwoPort(NPort):
             s12 = t22 - t21 * t11i * t12
             s21 = t11i
             s22 = - t11i * t12
-            matrices = np.column_stack(((s11, s12, s21, s22))).reshape((-1,2,2))
+            matrices = np.column_stack(((s11, s12, s21, s22))).reshape((-1, 2, 2))
             result = self.__class__(self.freqs, matrices, S, self.z0)
             if z0 != self.z0:
                 result = result.renormalize(z0)
@@ -270,7 +269,7 @@ class TwoPort(NPort):
                 t21 = s11 * s21i
                 t22 = s12 - s11 * s21i * s22
                 matrices = np.column_stack(((t11, t12,
-                                             t21, t22))).reshape((-1,2,2))
+                                             t21, t22))).reshape((-1, 2, 2))
                 t = self.__class__(self.freqs, matrices, T, z0)
                 result = t.renormalize(z0)
         elif self.type == ABCD and type == T:
@@ -281,11 +280,11 @@ class TwoPort(NPort):
             t12 = a - b0 + c0 - d
             t21 = a + b0 - c0 - d
             t22 = a - b0 - c0 + d
-            matrices = np.column_stack(((t11, t12, t21, t22))).reshape((-1,2,2))
+            matrices = np.column_stack(((t11, t12, t21, t22))).reshape((-1, 2, 2))
             result = 0.5 * self.__class__(self.freqs, matrices, T, z0)
         else:
             result = super(TwoPort, self).convert(type, z0)
-            
+
         return result
 
     def stability_k(self):
@@ -328,7 +327,7 @@ class TwoPort(NPort):
             if not twoportmatrix.is_stable_k():
                 return False
         return True
-    
+
     def is_stable_mu(self):
         for twoportmatrix in self:
             if not twoportmatrix.is_stable_mu():
@@ -362,7 +361,7 @@ class TwoPort(NPort):
         sum = a + d
         diff = a - d
         ad_bc = a * d - b * c
-        sq = unwrap_sqrt(sum**2 - 4 * ad_bc)
+        sq = unwrap_sqrt(sum ** 2 - 4 * ad_bc)
 
         exp_mgl_forward = 2 / (sum + sq)
         gamma_forward = - unwrap_log(exp_mgl_forward) / length
@@ -375,7 +374,7 @@ class TwoPort(NPort):
             exp_mgl_backward = (sum - sq) / 2
             gamma_backward = - unwrap_log(exp_mgl_backward) / length
             z0_backward = (sq - diff) / (2 * c)
-            return  GammaZ0TransmissionLine(self.freqs, gamma_forward,
+            return GammaZ0TransmissionLine(self.freqs, gamma_forward,
                                            z0_forward, gamma_backward,
                                            z0_backward)
 
@@ -386,7 +385,7 @@ def stability_k(twoport):
     else:
         s11, s12, s21, s22 = twoport.parameters
         delta = s11 * s22 - s12 * s21
-        k = ((1 - np.abs(s11)**2 - np.abs(s22)**2 + np.abs(delta)**2) /
+        k = ((1 - np.abs(s11) ** 2 - np.abs(s22) ** 2 + np.abs(delta) ** 2) /
              (2 * np.abs(s12 * s21)))
         return k, delta
 
@@ -397,8 +396,8 @@ def stability_mu(twoport):
     else:
         s11, s12, s21, s22 = twoport.parameters
         delta = s11 * s22 - s12 * s21
-        return (1 - np.abs(s11)**2) / (np.abs(s22 - delta * np.conj(s11)) +
-                                       np.abs(s12 * s21))
+        return (1 - np.abs(s11) ** 2) / (np.abs(s22 - delta * np.conj(s11)) +
+                                         np.abs(s12 * s21))
 
 
 def conditional_stability_mu(twoport, r1, r2):
@@ -407,8 +406,8 @@ def conditional_stability_mu(twoport, r1, r2):
     else:
         s11, s12, s21, s22 = twoport.parameters
         delta = s11 * s22 - s12 * s21
-        nom = 1 - (np.abs(s22) * r2)**2
-        denom = (np.abs(s11 - np.conj(s22) * delta * r2**2) +  
+        nom = 1 - (np.abs(s22) * r2) ** 2
+        denom = (np.abs(s11 - np.conj(s22) * delta * r2 ** 2) +
                  np.abs(s12 * s21) * r2) * r1
         return nom / denom
 
@@ -419,7 +418,7 @@ def stability_circle_source(twoport):
     else:
         s11, s12, s21, s22 = twoport.parameters
         delta = s11 * s22 - s12 * s21
-        denom = np.abs(s11)**2 - np.abs(delta)**2
+        denom = np.abs(s11) ** 2 - np.abs(delta) ** 2
         center = np.conj(s11 - delta * np.conj(s22)) / denom
         radius = np.abs(s12 * s21 / denom)
         return center, radius
@@ -431,7 +430,7 @@ def stability_circle_load(twoport):
     else:
         s11, s12, s21, s22 = twoport.parameters
         delta = s11 * s22 - s12 * s21
-        denom = np.abs(s22)**2 - np.abs(delta)**2
+        denom = np.abs(s22) ** 2 - np.abs(delta) ** 2
         center = np.conj(s22 - delta * np.conj(s11)) / denom
         radius = np.abs(s12 * s21 / denom)
         return center, radius

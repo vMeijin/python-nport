@@ -1,5 +1,6 @@
-import nport
 import numpy as np
+
+from . import nport
 
 
 class Deembedder(object):
@@ -10,7 +11,7 @@ class Deembedder(object):
         
         """
         raise NotImplementedError
-    
+
     def deembed(self, measurement):
         """
         De-embed the given measurement parameters
@@ -26,6 +27,7 @@ class Deembedder(object):
 
 class TwoStep(Deembedder):
     """A simple two-step (open-short) de-embedder"""
+
     def __init__(self, open, short):
         """
         :param open: open structure
@@ -42,7 +44,7 @@ class TwoStep(Deembedder):
         y_full = measurement.convert(nport.Y)
         z_ = (y_full - self.y_open).convert(nport.Z)
         z_dut = z_ - self.z_so
-        
+
         return z_dut.convert(nport.S)
 
     deembed.__doc__ = Deembedder.deembed.__doc__
@@ -56,6 +58,7 @@ class Vandamme01(Deembedder):
     *IEEE Transactions on Electron Devices*, vol. 48, no. 4, pp. 737-742, 2001
     
     """
+
     def __init__(self, open, short1, short2, through):
         """
         :param open: open structure
@@ -85,7 +88,7 @@ class Vandamme01(Deembedder):
         self.g1 = y11_open + y12_open
         self.g2 = y22_open + y12_open
         self.g3 = (- y12_open.convert(nport.Z) +
-                     y12_through.convert(nport.Z)).convert(nport.Y)
+                   y12_through.convert(nport.Z)).convert(nport.Y)
 
         z_x = y12_through.convert(nport.Z)
         z_y = (y11_short1 - self.g1).convert(nport.Z)
@@ -102,10 +105,10 @@ class Vandamme01(Deembedder):
         z_a = y_a.convert(nport.Z)
         z_b = z_a - (np.asarray([[1., 0], [0, 0]]) * self.z1 +
                      np.asarray([[0, 0], [0, 1.]]) * self.z2 +
-                     np.ones((2,2)) * self.z3)
+                     np.ones((2, 2)) * self.z3)
         y_b = z_b.convert(nport.Y)
         y_dut = y_b - (np.asarray([[1., -1.], [-1., 1.]]) * self.g3)
-        
+
         return y_dut.convert(nport.S)
 
     deembed.__doc__ = Deembedder.deembed.__doc__
@@ -118,6 +121,7 @@ class Kolding00(Deembedder):
     Devices*, vol. 47, no. 4, pp. 734-740, 2000
     
     """
+
     def __init__(self, simple_open, simple_short, open, short1, short2,
                  alpha=0.0, asymmetric=False):
         """        
@@ -143,7 +147,7 @@ class Kolding00(Deembedder):
         """
         self.alpha = alpha
         self.asymmetric = asymmetric
-        
+
         # convert S to Z parameters
         z_simpleopen = simple_open.convert(nport.Z)
         z_simpleshort = simple_short.convert(nport.Z)
@@ -159,12 +163,12 @@ class Kolding00(Deembedder):
 
         # pads
         if self.asymmetric:
-            self.zc = 2.0/3.0 * z_simpleshort
+            self.zc = 2.0 / 3.0 * z_simpleshort
             self.zp = (z_simpleopen - z_simpleshort)
         else:
-            self.zc = 2.0/3.0 * np.identity(2) * z_simpleshort
+            self.zc = 2.0 / 3.0 * np.identity(2) * z_simpleshort
             self.zp = np.identity(2) * (z_simpleopen - z_simpleshort)
-        
+
         # remove pads from short1 and open
         z_short1__ = self._remove_pads(z_short1)
         z_short2__ = self._remove_pads(z_short2)
@@ -196,7 +200,7 @@ class Kolding00(Deembedder):
                       np.asarray([[0, 0], [0, 1]]) * z32.convert(nport.Y)
             zf1 = z31 * (z31 / (z21_o__ - z21) - 2)
             zf2 = z32 * (z32 / (z12_o__ - z22) - 2)
-            #self.yf = np.asarray([[0, 1], [0, 0]]) * zf1.convert(nport.Y) + \
+            # self.yf = np.asarray([[0, 1], [0, 0]]) * zf1.convert(nport.Y) + \
             #          np.asarray([[0, 0], [1, 0]]) * zf2.convert(nport.Y)
             self.yf = 0.5 * np.asarray([[0, 1], [1, 0]]) * \
                       (zf1 + zf2).convert(nport.Y)
@@ -218,11 +222,11 @@ class Kolding00(Deembedder):
             y_dut = y___ - (self.y3 - self.yf)
         else:
             z___ = z__ - (self.zi_plus_z1 * np.identity(2) +
-                          self.z2 * np.ones((2,2)))
+                          self.z2 * np.ones((2, 2)))
             y___ = z___.convert(nport.Y)
             y_dut = y___ - (self.y3 * np.identity(2) +
-                            - self.yf * np.asarray([[0,1],[1,0]]))
-        
+                            - self.yf * np.asarray([[0, 1], [1, 0]]))
+
         return y_dut.convert(nport.S)
 
     deembed.__doc__ = Deembedder.deembed.__doc__
@@ -237,10 +241,9 @@ class Kolding00(Deembedder):
         
         """
         assert z_structure.type == nport.Z
-        z_ = z_structure - (3.0/2.0 * self.zc)
+        z_ = z_structure - (3.0 / 2.0 * self.zc)
         y_ = z_.convert(nport.Y)
 
         y_nopads = y_ - self.zp.convert(nport.Y)
         z_nopads = y_nopads.convert(nport.Z)
         return z_nopads
-

@@ -1,8 +1,10 @@
-import re
 import os
+import re
 from datetime import datetime
+
 import numpy as np
-import nport
+
+from . import nport
 
 
 def read(file_path, verbose=False):
@@ -20,7 +22,7 @@ def read(file_path, verbose=False):
     ports = np.sqrt(len(citifile.params[0]) - 1)
     assert ports == int(ports)
     ports = int(ports)
-    
+
     re_param = re.compile(r"^S\[(\d+),(\d+)\]$")
     indices = []
     for param in citifile.params[0][1:]:
@@ -33,11 +35,11 @@ def read(file_path, verbose=False):
     matrices = []
     for index in range(len(freqs)):
         matrix = np.array([[None for i in range(ports)]
-            for j in range(ports)], dtype=complex)
+                           for j in range(ports)], dtype=complex)
         for i, port in enumerate(indices):
             port1 = port[0]
             port2 = port[1]
-            matrix[port1 - 1, port2 - 1] = citifile.data[0][i+1][index]
+            matrix[port1 - 1, port2 - 1] = citifile.data[0][i + 1][index]
         matrices.append(matrix)
     return nport.NPort(freqs, matrices, nport.SCATTERING, 50)
 
@@ -105,14 +107,15 @@ def write(instance, file_path):
 #  development of this software by keeping this exact text present
 #  in any copied or derivative works.
 
-import string, sys
+import string
+
 
 class CITIFile:
     def __init__(self, filename):
         self.filename = filename
 
         # The following are the main data structures
-        self.packages = {}        
+        self.packages = {}
         self.constants = []
         self.params = []
         self.data = []
@@ -122,48 +125,48 @@ class CITIFile:
         myfile = open(self.filename, 'r')
 
         # Define some special control and book keeping variables
-        packagecounter = -1 # Index to the number of Citifile packages
-        packagenames = []   # List of the package names
+        packagecounter = -1  # Index to the number of Citifile packages
+        packagenames = []  # List of the package names
 
         while 1:
             line = myfile.readline()
 
             if not line:
                 break
-            
+
             linetxt = string.strip(line)
             line = string.split(linetxt)
 
-            #This line starts a new Citifile data package
-            #update the package counter and create blank indices
+            # This line starts a new Citifile data package
+            # update the package counter and create blank indices
             if len(line) > 0:
 
                 if line[0] == 'CITIFILE':
                     packagecounter = packagecounter + 1
-                    packagenames.append("")  #Create a blank name entry
+                    packagenames.append("")  # Create a blank name entry
 
                     self.constants.append([])
                     self.params.append([])
                     self.data.append([])
                     self.instrmnt.append([])
 
-                    indata = 'NO'       #Not reading data
-                    invarlist = 'NO'    #Not reading independant variable data
-                    datacount = 0       #Index to package data blocks
+                    indata = 'NO'  # Not reading data
+                    invarlist = 'NO'  # Not reading independant variable data
+                    datacount = 0  # Index to package data blocks
 
-                #Skip device-specific variables
+                # Skip device-specific variables
                 if line[0][0] == '#':
                     continue
 
-                #Should be one name per package
-                elif line[0] == 'NAME':  
+                # Should be one name per package
+                elif line[0] == 'NAME':
                     packagenames[packagecounter] = line[1]
 
                 elif line[0] == 'CONSTANT':
-                    self.constants[packagecounter].append((line[1],line[2]))
+                    self.constants[packagecounter].append((line[1], line[2]))
 
                 elif line[0] == 'VAR':
-                    self.params[packagecounter].append((line[1],line[2],line[3]))
+                    self.params[packagecounter].append((line[1], line[2], line[3]))
 
                 elif line[0] == 'SEG_LIST_BEGIN':
                     invarlist = 'SEG'
@@ -171,13 +174,13 @@ class CITIFile:
 
                 elif line[0] == 'SEG' and invarlist == 'SEG':
 
-                    #Decode the start, stop and number of points entries
+                    # Decode the start, stop and number of points entries
                     start = float(line[1])
-                    stop  = float(line[2])
-                    numpoints  = int(line[3])
+                    stop = float(line[2])
+                    numpoints = int(line[3])
 
-                    #Compute the actual data values from this information
-                    #and put it in the data block
+                    # Compute the actual data values from this information
+                    # and put it in the data block
                     step = (stop - start) / (numpoints - 1)
                     next = start
                     count = 0
@@ -188,7 +191,7 @@ class CITIFile:
 
                 elif line[0] == 'SEG_LIST_END':
                     invarlist = 'NO'
-                    #We've filled this data bin so point to the next one
+                    # We've filled this data bin so point to the next one
                     datacount = datacount + 1
 
                 elif line[0] == 'VAR_LIST_BEGIN':
@@ -204,33 +207,33 @@ class CITIFile:
                     datacount = datacount + 1
 
                 elif line[0] == 'DATA':
-                    self.params[packagecounter].append((line[1],line[2]))
+                    self.params[packagecounter].append((line[1], line[2]))
 
-                elif line[0] == 'BEGIN': 
+                elif line[0] == 'BEGIN':
                     indata = 'YES'
                     self.data[packagecounter].append([])
 
                 elif line[0] != 'END' and indata == 'YES':
 
                     if self.params[packagecounter][datacount][1] == 'RI':
-                        real,imag = string.split(linetxt,',')
-                        value = complex(float(real),float(imag))
+                        real, imag = string.split(linetxt, ',')
+                        value = complex(float(real), float(imag))
 
                     elif self.params[packagecounter][datacount][1] == 'MAG':
                         value = float(line[0])
 
                     self.data[packagecounter][datacount].append(value)
 
-                elif line[0] == 'END': 
+                elif line[0] == 'END':
                     indata = 'NO'
                     datacount = datacount + 1
 
                 else:
-                    #Anything else must be instrument specific so make these
-                    #lines available for parsing by the user
+                    # Anything else must be instrument specific so make these
+                    # lines available for parsing by the user
                     self.instrmnt[packagecounter].append(line)
 
-        #We've read and sorted all of these data
-        #Create dictionary of package index and names
-        for values in range(0,packagecounter+1):
+        # We've read and sorted all of these data
+        # Create dictionary of package index and names
+        for values in range(0, packagecounter + 1):
             self.packages[values] = packagenames[values]

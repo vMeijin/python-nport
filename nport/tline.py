@@ -1,17 +1,15 @@
-from __future__ import division
-
 import numpy as np
-from .base import TRANSMISSION
-from twonport import TwoNPort
-from eigenshuffle import eigenshuffle
 
+from .base import TRANSMISSION
+from .eigenshuffle import eigenshuffle
+from .twonport import TwoNPort
 
 
 class cached_property(property):
     def __init__(self, function, *args, **kwargs):
         super(cached_property, self).__init__(function, *args, **kwargs)
         self._function_name = function.__name__
-        
+
     def __get__(self, obj, *args):
         cache_variable = '_' + self._function_name
         try:
@@ -25,7 +23,7 @@ class cached_property(property):
 class property_if_reciprocal(property):
     def __init__(self, function, *args, **kwargs):
         super(property_if_reciprocal, self).__init__(function, *args, **kwargs)
-        
+
     def __get__(self, obj, *args):
         if obj.reciprocal:
             return super(property_if_reciprocal, self).__get__(obj, *args)
@@ -37,6 +35,7 @@ class property_if_reciprocal(property):
 class TransmissionLine(object):
     """
     """
+
     def __init__(self, freqs, reciprocal=False):
         self.freqs = np.asarray(freqs)
         self.reciprocal = reciprocal
@@ -76,7 +75,7 @@ class TransmissionLine(object):
     @property_if_reciprocal
     def c(self):
         return self.c_forward
-        
+
     def twoport(self, length):
         from .twoport import TwoPort
         if not self.reciprocal:
@@ -98,14 +97,13 @@ class TransmissionLine(object):
             c = 1 / self.z0 * np.sinh(gamma_length)
             abcd_matrices = np.hstack((np.array([a]).T, np.array([b]).T,
                                        np.array([c]).T, np.array([d]).T))
-        return TwoPort(self.freqs, abcd_matrices.reshape(-1,2,2), TRANSMISSION)
+        return TwoPort(self.freqs, abcd_matrices.reshape(-1, 2, 2), TRANSMISSION)
 
 
 class GammaZ0TransmissionLine(TransmissionLine):
     def __init__(self, freqs, gamma_forward, z0_forward,
                  gamma_backward=None, z0_backward=None):
-        reciprocal = all(map(lambda x: x is None,
-                             (gamma_backward, z0_backward)))
+        reciprocal = all([x is None for x in (gamma_backward, z0_backward)])
         super(GammaZ0TransmissionLine, self).__init__(freqs, reciprocal)
         self.gamma_forward = np.asarray(gamma_forward)
         self.z0_forward = np.asarray(z0_forward)
@@ -122,15 +120,15 @@ class GammaZ0TransmissionLine(TransmissionLine):
     @cached_property
     def z_forward(self):
         return self.gamma_forward * self.z0_forward
-        
+
     @cached_property
     def y_forward(self):
         return self.gamma_forward / self.z0_forward
-        
+
     @cached_property
     def z_backward(self):
         return self.gamma_backward * self.z0_backward
-        
+
     @cached_property
     def y_backward(self):
         return self.gamma_backward / self.z0_backward
@@ -173,7 +171,7 @@ class RLGCTransmissionLine(TransmissionLine):
                  r_backward=None, l_backward=None, g_backward=None,
                  c_backward=None):
         rlgc_backward = (r_backward, l_backward, g_backward, c_backward)
-        reciprocal = all(map(lambda x: x is None, rlgc_backward))
+        reciprocal = all([x is None for x in rlgc_backward])
         super(RLGCTransmissionLine, self).__init__(freqs, reciprocal)
         self.r_forward = np.asarray(r_forward)
         self.l_forward = np.asarray(l_forward)
@@ -203,7 +201,7 @@ class RLGCTransmissionLine(TransmissionLine):
     @cached_property
     def gamma_forward(self):
         return unwrap_sqrt(self.z_forward * self.y_forward)
-        
+
     @cached_property
     def z0_forward(self):
         return unwrap_sqrt(self.z_forward / self.y_forward)
@@ -219,11 +217,10 @@ class RLGCTransmissionLine(TransmissionLine):
     @cached_property
     def gamma_backward(self):
         return unwrap_sqrt(self.z_backward * self.y_backward)
-        
+
     @cached_property
     def z0_backward(self):
         return unwrap_sqrt(self.z_backward / self.y_backward)
-
 
 
 class MulticonductorTransmissionLine(object):
@@ -246,6 +243,7 @@ class MulticonductorTransmissionLine(object):
     differ.
 
     """
+
     def __init__(self, twonport, length, reciprocal=True):
         """
         :param twonport: 2n-port that represents a multiconductor transmission
@@ -260,7 +258,7 @@ class MulticonductorTransmissionLine(object):
         self.twonport = twonport.convert(TRANSMISSION)
         self.freqs = self.twonport.freqs
         self.length = length
-        
+
         # modal analysis of an MTL
         # reference:
         # [FAR04] "A new generalized modal analysis theory for nonuniform
@@ -270,13 +268,13 @@ class MulticonductorTransmissionLine(object):
         #   Techniques" by J.A. Brandao Faria
         # [PAU08] "Analysis of Multiconductor Transmission Lines", 2nd edition
         #   by Clayton R. Paul
-        
+
         # retrieve ABCD parameters
         self.a = self.twonport.get_parameter(1, 1)
         self.b = self.twonport.get_parameter(1, 2)
         self.c = self.twonport.get_parameter(2, 1)
         self.d = self.twonport.get_parameter(2, 2)
-        
+
         # calculate eigenvalues and eigenvectors
         if reciprocal:
             self.b_dot_ct = np.array([np.dot(b, c.T)
@@ -329,7 +327,7 @@ class MulticonductorTransmissionLine(object):
             tl_prod_shifted, tl_traces = shift_eigenvalues(tl_prod)
             w0_prod_shifted, w0_traces = shift_eigenvalues(w0_prod)
             wl_prod_shifted, wl_traces = shift_eigenvalues(wl_prod)
-    
+
             e0_shifted, self.t0 = eigenshuffle(t0_prod_shifted)
             el_shifted, self.tl = eigenshuffle(tl_prod_shifted)
             ew0_shifted, self.w0 = eigenshuffle(w0_prod_shifted)
@@ -352,7 +350,7 @@ class MulticonductorTransmissionLine(object):
             self.wl = np.array([np.transpose(tlinv) for tlinv in self.tlinv])
 
         self.w0inv = np.array([np.linalg.inv(w0) for w0 in self.w0])
-        #self.wlinv = np.array([np.linalg.inv(wl) for wl in self.wl])
+        # self.wlinv = np.array([np.linalg.inv(wl) for wl in self.wl])
 
         self.am = np.array([np.dot(np.dot(t0inv, a), tl)
                             for t0inv, a, tl
@@ -366,7 +364,7 @@ class MulticonductorTransmissionLine(object):
         self.dm = np.array([np.dot(np.dot(w0inv, d), wl)
                             for w0inv, d, wl
                             in zip(self.w0inv, self.d, self.wl)])
-        
+
         # calculate modal propagation factors and characteristic impedances
         diag_am = np.asarray([np.diag(am) for am in self.am])
         diag_bm = np.asarray([np.diag(bm) for bm in self.bm])
@@ -376,7 +374,7 @@ class MulticonductorTransmissionLine(object):
         sum = diag_am + diag_dm
         diff = diag_am - diag_dm
         ad_bc = diag_am * diag_dm - diag_bm * diag_cm
-        sq = unwrap_sqrt(sum**2 - 4 * ad_bc)
+        sq = unwrap_sqrt(sum ** 2 - 4 * ad_bc)
 
         exp_mgl_forward = 2 / (sum + sq)
         exp_mgl_backward = (sum - sq) / 2
@@ -386,10 +384,10 @@ class MulticonductorTransmissionLine(object):
 
         self.modal_z0_forward = (sq + diff) / (2 * diag_cm)
         self.modal_z0_backward = (sq - diff) / (2 * diag_cm)
-        
+
         self.modal_y0_forward = 1.0 / self.modal_z0_forward
         self.modal_y0_backward = 1.0 / self.modal_z0_backward
-        
+
         # calculate (natural) longitudinal RLGC matrices
         # NOTE: verify!
         #   z0_forward and z0_backward?
@@ -400,10 +398,10 @@ class MulticonductorTransmissionLine(object):
             np.asarray([np.dot(np.dot(t0, np.diag(gam)), tlinv)
                         for t0, gam, tlinv
                         in zip(self.t0, self.modal_gamma_forward, self.tlinv)])
-#        self.natural_gamma_backward = \  # this is a guess
-#            np.asarray([np.dot(np.dot(tl, np.diag(gam)), t0inv)
-#                        for tl, gam, t0inv
-#                        in zip(self.tl, self.modal_gamma, self.t0inv)])
+        #        self.natural_gamma_backward = \  # this is a guess
+        #            np.asarray([np.dot(np.dot(tl, np.diag(gam)), t0inv)
+        #                        for tl, gam, t0inv
+        #                        in zip(self.tl, self.modal_gamma, self.t0inv)])
 
         self.modal_y0m_forward = np.asarray([np.diag(y0)
                                              for y0
@@ -411,20 +409,20 @@ class MulticonductorTransmissionLine(object):
         self.modal_y0m_backward = np.asarray([np.diag(y0)
                                               for y0
                                               in self.modal_y0_backward])
-            # the modal wave admittance matrix (diagonal)
+        # the modal wave admittance matrix (diagonal)
 
         self.natural_y0_forward = np.asarray([np.dot(np.dot(w0, y0), tlinv)
                                               for w0, y0, tlinv
                                               in zip(self.w0,
                                                      self.modal_y0m_forward,
                                                      self.tlinv)])
-#        self.natural_y0_backward = np.asarray([np.dot(np.dot(wl, y0), t0inv) # this is a guess
-#            for wl, y0, t0inv in zip(self.wl, self.modal_y0m_backward, self.t0inv)])
-            # conversion to natural wave admittance matrices [FAR93] eq 1.57
-        self.natural_z0_forward = np.asarray([np.linalg.inv(y0) 
+        #        self.natural_y0_backward = np.asarray([np.dot(np.dot(wl, y0), t0inv) # this is a guess
+        #            for wl, y0, t0inv in zip(self.wl, self.modal_y0m_backward, self.t0inv)])
+        # conversion to natural wave admittance matrices [FAR93] eq 1.57
+        self.natural_z0_forward = np.asarray([np.linalg.inv(y0)
                                               for y0
                                               in self.natural_y0_forward])
-            # natural wave impedance matrices
+        # natural wave impedance matrices
 
         # 2) calculate per-unit-length Z, Y and RLGC matrices
         #     [FAR93] eq 1.58 & 1.60
@@ -436,7 +434,7 @@ class MulticonductorTransmissionLine(object):
                                        for yw, gam
                                        in zip(self.natural_y0_forward,
                                               self.natural_gamma_forward)])
-        
+
         two_pi_freqs = 2 * np.pi * self.freqs
         self._rpm_forward = self.zpm_forward.real
         self._lpm_forward = (self.zpm_forward.imag.T / two_pi_freqs).T
@@ -444,7 +442,7 @@ class MulticonductorTransmissionLine(object):
         self._cpm_forward = (self.ypm_forward.imag.T / two_pi_freqs).T
 
         self.modal_gamma = self.modal_gamma_forward
-        
+
     @property
     def gamma_forward(self):
         """Forward propagation constant"""

@@ -29,16 +29,15 @@ try:
 except ImportError:
     __version__ = 'unknown (package not built using setuptools)'
 
-
-from .parameter import parameter, real, imag, mag, db10, db20, rad, deg
-from .base import Z, Y, S, T, H, G, ABCD
-from .base import IMPEDANCE, ADMITTANCE, SCATTERING, SCATTERING_TRANSFER
-from .base import HYBRID, INVERSE_HYBRID, TRANSMISSION 
-from .nport import NPortMatrix, NPort, dot
-from .twoport import TwoPortMatrix, TwoPort
-from .twonport import TwoNPortMatrix, TwoNPort
-
+from . import citi
 from . import deemb
 from . import tline
 from . import touchstone
-from . import citi
+from .base import HYBRID, INVERSE_HYBRID, TRANSMISSION
+from .base import IMPEDANCE, ADMITTANCE, SCATTERING, SCATTERING_TRANSFER
+from .base import Z, Y, S, T, H, G, ABCD
+from .nport import NPortMatrix, NPort, dot
+from .parameter import real, imag, mag, db10, db20, rad, deg
+from .twonport import TwoNPortMatrix, TwoNPort
+from .twoport import TwoPortMatrix, TwoPort
+

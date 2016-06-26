@@ -1,11 +1,8 @@
-
-from __future__ import division
-
 import numpy as np
 
-from .base import Z, Y, S, T, H, G, ABCD
 from .base import IMPEDANCE, ADMITTANCE, SCATTERING
 from .base import NPortMatrixBase, NPortBase
+from .base import Z, Y, S, T, H, G, ABCD
 from .parameter import rad
 
 
@@ -22,6 +19,7 @@ class NPortMatrix(NPortMatrixBase):
     :type z0: :class:`float`
     
     """
+
     def __new__(cls, matrix, type, z0=None):
         matrix = np.asarray(matrix, dtype=complex)
         obj = NPortMatrixBase.__new__(cls, matrix, type, z0)
@@ -65,8 +63,8 @@ class NPortMatrix(NPortMatrixBase):
                             "multiple of 2")
         n = int(self.ports / 2)
         if inports is None and outports is None:
-            inports = range(n)
-            outports = range(n, 2*n)
+            inports = list(range(n))
+            outports = list(range(n, 2 * n))
             matrix = self
         else:
             # check whether the given sets of ports are valid
@@ -74,8 +72,8 @@ class NPortMatrix(NPortMatrixBase):
             assert len(inports) == n
             assert len(outports) == n
             allports = set(inports).union(set(outports))
-            assert len(allports) == 2*n
-            assert min(allports) == 1 and max(allports) == 2*n
+            assert len(allports) == 2 * n
+            assert min(allports) == 1 and max(allports) == 2 * n
             inports = [port - 1 for port in inports]
             outports = [port - 1 for port in outports]
 
@@ -93,10 +91,10 @@ class NPortMatrix(NPortMatrixBase):
 
         # TODO: rewrite using reshape()?
         matrix = np.asmatrix(matrix)
-        x11 = matrix[0:n  , 0:n  ]
-        x12 = matrix[0:n  , n:2*n]
-        x21 = matrix[n:2*n, 0:n  ]
-        x22 = matrix[n:2*n, n:2*n]
+        x11 = matrix[0:n, 0:n]
+        x12 = matrix[0:n, n:2 * n]
+        x21 = matrix[n:2 * n, 0:n]
+        x22 = matrix[n:2 * n, n:2 * n]
         matrix = np.array([[x11, x12], [x21, x22]])
         return TwoNPortMatrix(matrix, self.type, self.z0)
 
@@ -331,7 +329,7 @@ class NPortMatrix(NPortMatrixBase):
             other = other.convert(ADMITTANCE)
         if portmap is None:
             assert other.ports == self.ports
-            portmap = range(1, self.ports + 1)
+            portmap = list(range(1, self.ports + 1))
         if self.type == ADMITTANCE:
             t = np.zeros((self.ports, other.ports), dtype=float)
             for i, port in enumerate(portmap):
@@ -351,9 +349,9 @@ class NPortMatrix(NPortMatrixBase):
         
         """
         if self.type != SCATTERING:
-            return self.convert(SCATTERING).ispassive()
+            return self.convert(SCATTERING).is_passive()
         else:
-            return np.max(np.sum(np.abs(np.asarray(self))**2, 1)) <= 1
+            return np.max(np.sum(np.abs(np.asarray(self)) ** 2, 1)) <= 1
 
     def is_reciprocal(self):
         """Check whether this n-port matrix is reciprocal
@@ -387,7 +385,7 @@ class NPort(NPortBase):
 
     """
     matrix_cls = NPortMatrix
-    
+
     def __new__(cls, freqs, matrices, type, z0=None):
         matrices = np.asarray(matrices, dtype=complex)
         obj = NPortBase.__new__(cls, freqs, matrices, type, z0)
@@ -610,7 +608,7 @@ class NPort(NPortBase):
         :rtype: :class:`ndarray`
         
         """
-        if self.type not in (S, ):
+        if self.type not in (S,):
             raise TypeError("Group delay only makes sense for S-parameters (?)")
         phase = np.unwrap(rad(self.get_parameter(port1, port2)))
         dphase = np.gradient(phase)
@@ -637,20 +635,21 @@ def dot(arg1, arg2):
                  :class:`TwoNPortMatrix` or :class:`ndarray`
     
     """
+
     def merge_freqs(freqs1, freqs2):
         minf = max(freqs1[0], freqs2[0])
         maxf = min(freqs1[-1], freqs2[-1])
         result = list(set(freqs1).union(set(freqs2)))
         result.sort()
         return np.array(result[result.index(minf):result.index(maxf)])
-    
+
     if isinstance(arg1, NPort):
         if isinstance(arg2, NPort):
             result_freqs = merge_freqs(arg1.freqs, arg2.freqs)
             arg1_matrices = arg1.at(result_freqs)
             arg2_matrices = arg2.at(result_freqs)
             result_matrices = np.asarray([np.dot(a, b) for (a, b) in
-                zip(arg1_matrices, arg2_matrices)])
+                                          zip(arg1_matrices, arg2_matrices)])
         else:
             result_freqs = arg1.freqs
             result_matrices = np.array([np.dot(matrix, arg2)
@@ -664,16 +663,16 @@ def dot(arg1, arg2):
                 c = np.dot(l[1, 0], r[0, 0]) + np.dot(l[1, 1], r[1, 0])
                 d = np.dot(l[1, 0], r[0, 1]) + np.dot(l[1, 1], r[1, 1])
                 return np.asarray([[a, b], [c, d]])
-            
+
             result_freqs = merge_freqs(arg1.freqs, arg2.freqs)
             arg1_matrices = arg1.at(result_freqs)
             arg2_matrices = arg2.at(result_freqs)
             result_matrices = np.asarray([twonport_dot(a, b) for (a, b) in
-                zip(arg1_matrices, arg2_matrices)])
+                                          zip(arg1_matrices, arg2_matrices)])
         else:
             raise NotImplementedError
         return TwoNPort(result_freqs, result_matrices, arg1.type,
-                                 arg1.z0)
+                        arg1.z0)
     elif type(arg2) == NPort:
         raise NotImplementedError
     else:

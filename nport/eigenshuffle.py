@@ -143,12 +143,12 @@ def eigenshuffle(Asequence):
     # alternative implementations:
     #  * http://www.mathworks.com/matlabcentral/fileexchange/29463-eigenshuffle2
     #  * http://www.mathworks.com/matlabcentral/fileexchange/29464-rootshuffle-m ?
-    
+
     # Is Asequence a 3-d array?
     Ashape = np.shape(Asequence)
     if Ashape[-1] != Ashape[-2]:
-        raise Exception, ("Asequence must be a (nxpxp) array of "
-                          "eigen-problems, each of size pxp")
+        raise Exception("Asequence must be a (nxpxp) array of "
+                        "eigen-problems, each of size pxp")
     p = Ashape[-1]
     if len(Ashape) < 3:
         n = 1
@@ -157,19 +157,19 @@ def eigenshuffle(Asequence):
         n = Ashape[0]
 
     # the initial eigenvalues/vectors in nominal order
-    Vseq = np.zeros( (n, p, p), dtype=complex )
-    Dseq = np.zeros( (n, p), dtype=complex )
+    Vseq = np.zeros((n, p, p), dtype=complex)
+    Dseq = np.zeros((n, p), dtype=complex)
 
     for i in range(n):
-        D, V = np.linalg.eig( Asequence[i] )
+        D, V = np.linalg.eig(Asequence[i])
         # initial ordering is purely in decreasing order.
         # If any are complex, the sort is in terms of the
         # real part.
         tags = np.argsort(D.real, axis=0)[::-1]
-        
-        Dseq[i] = D[:, tags]
+
+        Dseq[i] = D[tags]
         Vseq[i] = V[:, tags]
-    
+
     # now, treat each eigenproblem in sequence (after the first one.)
     m = munkres.Munkres()
     for i in range(1, n):
@@ -179,8 +179,8 @@ def eigenshuffle(Asequence):
         V1 = Vseq[i - 1]
         V2 = Vseq[i]
         dist = ((1 - np.abs(np.dot(np.transpose(V1), V2))) *
-                np.sqrt(distancematrix(D1.real, D2.real)**2 +
-                        distancematrix(D1.imag, D2.imag)**2))
+                np.sqrt(distancematrix(D1.real, D2.real) ** 2 +
+                        distancematrix(D1.imag, D2.imag) ** 2))
 
         # Is there a best permutation? use munkres.
         reorder = m.compute(np.transpose(dist))
@@ -192,8 +192,8 @@ def eigenshuffle(Asequence):
 
         # also ensure the signs of each eigenvector pair
         # were consistent if possible
-        S = np.squeeze( np.sum( Vseq[i - 1] * Vseq[i], 0 ).real ) < 0
-       
+        S = np.squeeze(np.sum(Vseq[i - 1] * Vseq[i], 0).real) < 0
+
         Vseq[i] = Vseq[i] * (-S * 2 - 1)
 
     return Dseq, Vseq

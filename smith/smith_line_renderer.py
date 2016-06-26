@@ -1,7 +1,7 @@
 """ Defines the SmithLineRenderer class.
 """
 
-from __future__ import with_statement
+
 
 # Major library imports
 import numpy as np
@@ -24,7 +24,7 @@ class SmithLineRenderer(LinePlot):
 #        super(self.__class__, self)._gather_points()
 
     def _render(self, gc, points):
-        print "SmithLineRenderer._render"
+        print("SmithLineRenderer._render")
         super(self.__class__, self)._render(gc, points)
 
     def _gather_points(self):

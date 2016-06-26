@@ -15,10 +15,10 @@ def parameter(real=None, imag=None, mag=None, db10=None, db20=None, deg=None,
             raise ValueError('Illegal combination of arguments.')
         if imag is None:
             imag = 0
-    else: # real is None
+    else:  # real is None
         if ((imag is not None) and
-            (mag and db10 and db20 is not None) and 
-            (deg and rad is not None)):
+                (mag and db10 and db20 is not None) and
+                (deg and rad is not None)):
             raise ValueError('Illegal combination of arguments.')
 
         if db10 is not None:

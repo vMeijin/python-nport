@@ -1,5 +1,6 @@
-from base import SCATTERING
-import touchstone, citi
+from . import touchstone, citi
+from .base import SCATTERING
+
 
 def main():
     import sys
@@ -14,7 +15,7 @@ def main():
                       action="store", type="string", dest="format",
                       metavar="FORMAT", default="tstone",
                       help="set output format (tstone or citi)")
-    parser.add_option("-r", "--recombine", 
+    parser.add_option("-r", "--recombine",
                       action="store", type="string", dest="recombine",
                       metavar="PORTLIST", help="recombine ports")
 
@@ -31,7 +32,7 @@ def main():
             break
         except:
             nport = None
-    
+
     if nport is None:
         print("ERROR: Unsupported input file format")
         sys.exit(1)
@@ -43,4 +44,3 @@ def main():
     outformats = {'tstone': touchstone, 'citi': citi}
     outformat = outformats[options.format.lower()]
     outformat.write(nport, args[1])
-

@@ -1,9 +1,11 @@
-import re
 import os
+import re
 from datetime import datetime
+
 import numpy as np
+
 import nport
-import parameter
+from nport import parameter
 
 REAL_IMAG = 'RI'
 MAG_ANGLE = 'MA'
@@ -42,11 +44,11 @@ def read(file_path, verbose=False):
     m = re_filename.search(file_path)
     ports = int(m.group('ports'))
     if verbose:
-        print("File '%s'" % file_path)
-        print("  Number of ports (based on file extension) = %d" % \
-            ports)
+        print(("File '%s'" % file_path))
+        print(("  Number of ports (based on file extension) = %d" % \
+               ports))
     file_path = os.path.abspath(file_path)
-    file = open(file_path, 'rb')
+    file = open(file_path, 'r')
     (frequnit, type, format, z0) = _parse_option_line(file, verbose)
     freqs = []
     matrices = []
@@ -64,13 +66,13 @@ def read(file_path, verbose=False):
 
 _re_comment = re.compile(r"^\s*!")
 _re_options = re.compile(r"^\s*#")
-_re_empty   = re.compile(r"^\s*$")
+_re_empty = re.compile(r"^\s*$")
 
 
 def _parse_option_line(file, verbose=False):
     """Parse and interpret the option line in the touchstone file"""
     prefix = {
-        '' : 1,
+        '': 1,
         'K': 1e3,
         'M': 1e6,
         'G': 1e9
@@ -81,7 +83,7 @@ def _parse_option_line(file, verbose=False):
     type = nport.SCATTERING
     format = MAG_ANGLE
     z0 = 50
-    
+
     # format of the options line (order is unimportant)
     # <frequency unit> <parameter> <format> R <n>
     line = file.readline()
@@ -89,7 +91,7 @@ def _parse_option_line(file, verbose=False):
         line = file.readline()
 
     options = line[1:].upper().split()
-    
+
     i = 0
     while i < len(options):
         option = options[i]
@@ -105,17 +107,17 @@ def _parse_option_line(file, verbose=False):
         else:
             raise ParseError('unrecognized option: {0}'.format(option))
         i += 1
-           
+
     if verbose:
-        print("  Frequency unit: %g Hz" % frequnit)
-        print("  Parameter:      %s"    % type)
-        print("  Format:         %s"    % format)
-        print("  Reference R:    %g"    % z0)
-        
+        print(("  Frequency unit: %g Hz" % frequnit))
+        print(("  Parameter:      %s" % type))
+        print(("  Format:         %s" % format))
+        print(("  Reference R:    %g" % z0))
+
     # only S-parameters are supported for now
     if type != nport.SCATTERING:
         raise NotImplementedError
-    
+
     return (frequnit, type, format, z0)
 
 
@@ -127,10 +129,10 @@ def _get_next_line_data(file):
     """
     line = '!'
     while _re_comment.search(line) or \
-        _re_options.search(line) or \
-        _re_empty.search(line):
+            _re_options.search(line) or \
+            _re_empty.search(line):
         line = file.readline()
-        if not line: # end of data
+        if not line:  # end of data
             raise EOFError
     data = []
     line = line.split('!')[0]
@@ -152,18 +154,18 @@ def _parse_next_sample(file, ports, format):
 
     port1 = port2 = 1
     matrix = np.array([[None for i in range(ports)]
-        for j in range(ports)], dtype=complex)
+                       for j in range(ports)], dtype=complex)
 
     while True:
-        for i in range(len(data) / 2):
+        for i in range(len(data) // 2):
             index = 2 * i
             args = {}
             args[keys[format][0]] = data[index]
             args[keys[format][1]] = data[index + 1]
             try:
-                if ports == 2:			
+                if ports == 2:
                     matrix[port1 - 1, port2 - 1] = parameter.parameter(**args)
-                else:			
+                else:
                     matrix[port2 - 1, port1 - 1] = parameter.parameter(**args)
             except IndexError:
                 raise Exception("more ports than reported in the file "
@@ -172,7 +174,7 @@ def _parse_next_sample(file, ports, format):
             port1 += 1
             if port1 > ports:
                 port2 += 1
-                port1 = 1                    
+                port1 = 1
 
         count += len(data) / 2
         if port2 > ports:
@@ -181,7 +183,7 @@ def _parse_next_sample(file, ports, format):
         if len(data) % 2 != 0:
             raise Exception("less ports than reported in the file extension")
 
-    assert count == ports**2
+    assert count == ports ** 2
     return (freq, matrix)
 
 
@@ -203,7 +205,7 @@ def write(instance, file_path, format=REAL_IMAG):
         first, second = formats[format]
     except KeyError:
         raise ValueError("unknown format specified")
-    file_path = file_path + ".s%dp" %  instance.ports
+    file_path = file_path + ".s%dp" % instance.ports
     file = open(file_path, 'wb')
     creationtime = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     file.write("! Created by the Python nport module\n")
@@ -217,8 +219,7 @@ def write(instance, file_path, format=REAL_IMAG):
         parameters = instance[i].flatten(flatten_order)
         for i, element in enumerate(parameters):
             if i != 0 and \
-                ((threeport and i % 3 == 0) or (not threeport and i % 4 == 0)):
+                    ((threeport and i % 3 == 0) or (not threeport and i % 4 == 0)):
                 sample += "\n\t\t"
             sample += " %g %g" % (first(element), second(element))
         file.write(sample + "\n")
-        

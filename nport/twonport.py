@@ -1,10 +1,8 @@
-from __future__ import division
-
 import numpy as np
 
 from .base import Z, Y, S, T, ABCD
 from .base import IMPEDANCE, ADMITTANCE, SCATTERING, SCATTERING_TRANSFER
-from .base import HYBRID, INVERSE_HYBRID, TRANSMISSION 
+from .base import HYBRID, INVERSE_HYBRID, TRANSMISSION
 from .base import NPortMatrixBase, NPortBase
 from .nport import NPortMatrix, NPort
 
@@ -22,6 +20,7 @@ class TwoNPortMatrix(NPortMatrixBase):
     :type z0: :class:`float`
 
     """
+
     # See also "block matrices" in the Matrix Cookbook
     def __new__(cls, matrix, type, z0=None):
         matrix = np.asarray(matrix, dtype=complex)
@@ -49,8 +48,8 @@ class TwoNPortMatrix(NPortMatrixBase):
         :rtype: :class:`NPortMatrix`
         
         """
-        matrix = np.vstack((np.hstack((self[0,0], self[0,1])),
-            np.hstack((self[1,0], self[1,1]))))
+        matrix = np.vstack((np.hstack((self[0, 0], self[0, 1])),
+                            np.hstack((self[1, 0], self[1, 1]))))
         return NPortMatrix(matrix, self.type, self.z0)
 
     def renormalize(self, z0):
@@ -80,18 +79,18 @@ class TwoNPortMatrix(NPortMatrixBase):
         """
         z0 = self.convert_z0test(type, z0)
         idty = np.identity(self.shape[2], dtype=complex)
-        
+
         # TODO: check for singularities
         if type == self.type:
             if type in (S, T):
                 return self.renormalize(z0)
             else:
-                return self                
+                return self
         elif self.type == S and type == ABCD:
-            s11 = np.asmatrix(self[0,0])
-            s12 = np.asmatrix(self[0,1])
-            s21 = np.asmatrix(self[1,0])
-            s22 = np.asmatrix(self[1,1])
+            s11 = np.asmatrix(self[0, 0])
+            s12 = np.asmatrix(self[0, 1])
+            s21 = np.asmatrix(self[1, 0])
+            s22 = np.asmatrix(self[1, 1])
             s21i = np.linalg.inv(s21)
             i_plus_s11__times_s21i = (idty + s11) * s21i
             i_minus_s11__times_s21i = (idty - s11) * s21i
@@ -112,10 +111,10 @@ class TwoNPortMatrix(NPortMatrixBase):
             if z0 != self.z0:
                 result = self.renormalize(z0).convert(T, z0)
             else:
-                s11 = np.asmatrix(self[0,0])
-                s12 = np.asmatrix(self[0,1])
-                s21 = np.asmatrix(self[1,0])
-                s22 = np.asmatrix(self[1,1])
+                s11 = np.asmatrix(self[0, 0])
+                s12 = np.asmatrix(self[0, 1])
+                s21 = np.asmatrix(self[1, 0])
+                s22 = np.asmatrix(self[1, 1])
                 s21i = np.linalg.inv(s21)
                 t11 = s21i
                 t12 = - s21i * s22
@@ -124,10 +123,10 @@ class TwoNPortMatrix(NPortMatrixBase):
                 t = self.__class__([[t11, t12], [t21, t22]], T, z0)
                 result = t.renormalize(z0)
         elif self.type == T and type == S:
-            t11 = np.asmatrix(self[0,0])
-            t12 = np.asmatrix(self[0,1])
-            t21 = np.asmatrix(self[1,0])
-            t22 = np.asmatrix(self[1,1])
+            t11 = np.asmatrix(self[0, 0])
+            t12 = np.asmatrix(self[0, 1])
+            t21 = np.asmatrix(self[1, 0])
+            t22 = np.asmatrix(self[1, 1])
             t11i = np.linalg.inv(t11)
             s11 = t21 * t11i
             s12 = t22 - t21 * t11i * t12
@@ -137,30 +136,30 @@ class TwoNPortMatrix(NPortMatrixBase):
             if z0 != self.z0:
                 result = result.renormalize(z0)
         elif self.type == T and type == ABCD:
-            t11 = np.asmatrix(self[0,0])
-            t12 = np.asmatrix(self[0,1])
-            t21 = np.asmatrix(self[1,0])
-            t22 = np.asmatrix(self[1,1])
+            t11 = np.asmatrix(self[0, 0])
+            t12 = np.asmatrix(self[0, 1])
+            t21 = np.asmatrix(self[1, 0])
+            t22 = np.asmatrix(self[1, 1])
             a = t11 + t12 + t21 + t22
             b = (t11 - t12 + t21 - t22) * self.z0
-            c = (t11 + t12 - t21 -t22) / self.z0
-            d = t11 - t12 -t21 + t22
+            c = (t11 + t12 - t21 - t22) / self.z0
+            d = t11 - t12 - t21 + t22
             result = 0.5 * self.__class__([[a, b], [c, d]], ABCD, z0)
         elif self.type == ABCD and type == T:
-            a = np.asmatrix(self[0,0])
-            b0 = np.asmatrix(self[0,1]) / z0
-            c0 = np.asmatrix(self[1,0]) * z0
-            d = np.asmatrix(self[1,1])
+            a = np.asmatrix(self[0, 0])
+            b0 = np.asmatrix(self[0, 1]) / z0
+            c0 = np.asmatrix(self[1, 0]) * z0
+            d = np.asmatrix(self[1, 1])
             t11 = a + b0 + c0 + d
             t12 = a - b0 + c0 - d
             t21 = a + b0 - c0 - d
             t22 = a - b0 - c0 + d
             result = 0.5 * self.__class__([[t11, t12], [t21, t22]], T, z0)
         elif self.type == ABCD and type == Z:
-            a = np.asmatrix(self[0,0])
-            b = np.asmatrix(self[0,1])
-            c = np.asmatrix(self[1,0])
-            d = np.asmatrix(self[1,1])
+            a = np.asmatrix(self[0, 0])
+            b = np.asmatrix(self[0, 1])
+            c = np.asmatrix(self[1, 0])
+            d = np.asmatrix(self[1, 1])
             ci = np.linalg.inv(c)
             z11 = a * ci
             z12 = a * ci * d - b
@@ -168,10 +167,10 @@ class TwoNPortMatrix(NPortMatrixBase):
             z22 = ci * d
             result = self.__class__([[z11, z12], [z21, z22]], Z, z0)
         elif self.type == Z and type == ABCD:
-            z11 = np.asmatrix(self[0,0])
-            z12 = np.asmatrix(self[0,1])
-            z21 = np.asmatrix(self[1,0])
-            z22 = np.asmatrix(self[1,1])
+            z11 = np.asmatrix(self[0, 0])
+            z12 = np.asmatrix(self[0, 1])
+            z21 = np.asmatrix(self[1, 0])
+            z22 = np.asmatrix(self[1, 1])
             z21i = np.linalg.inv(z21)
             a = z11 * z21i
             b = z11 * z21i * z22 - z12
@@ -179,10 +178,10 @@ class TwoNPortMatrix(NPortMatrixBase):
             d = z21i * z22
             result = self.__class__([[a, b], [c, d]], ABCD, z0)
         elif self.type == ABCD and type == Y:
-            a = np.asmatrix(self[0,0])
-            b = np.asmatrix(self[0,1])
-            c = np.asmatrix(self[1,0])
-            d = np.asmatrix(self[1,1])
+            a = np.asmatrix(self[0, 0])
+            b = np.asmatrix(self[0, 1])
+            c = np.asmatrix(self[1, 0])
+            d = np.asmatrix(self[1, 1])
             bi = np.linalg.inv(b)
             y11 = d * bi
             y12 = c - d * bi * a
@@ -190,10 +189,10 @@ class TwoNPortMatrix(NPortMatrixBase):
             y22 = bi * a
             result = self.__class__([[y11, y12], [y21, y22]], Y, z0)
         elif self.type == Y and type == ABCD:
-            y11 = np.asmatrix(self[0,0])
-            y12 = np.asmatrix(self[0,1])
-            y21 = np.asmatrix(self[1,0])
-            y22 = np.asmatrix(self[1,1])
+            y11 = np.asmatrix(self[0, 0])
+            y12 = np.asmatrix(self[0, 1])
+            y21 = np.asmatrix(self[1, 0])
+            y22 = np.asmatrix(self[1, 1])
             y21i = np.linalg.inv(y21)
             a = - y21i * y22
             b = - y21i
@@ -201,10 +200,10 @@ class TwoNPortMatrix(NPortMatrixBase):
             d = - y11 * y21i
             result = self.__class__([[a, b], [c, d]], ABCD, z0)
         elif self.type == Z and type == T:
-            z11 = np.asmatrix(self[0,0]) / z0
-            z12 = np.asmatrix(self[0,1]) / z0
-            z21 = np.asmatrix(self[1,0]) / z0
-            z22 = np.asmatrix(self[1,1]) / z0
+            z11 = np.asmatrix(self[0, 0]) / z0
+            z12 = np.asmatrix(self[0, 1]) / z0
+            z21 = np.asmatrix(self[1, 0]) / z0
+            z22 = np.asmatrix(self[1, 1]) / z0
             z21i = np.linalg.inv(z21)
             i_plus_z11__times_z21i = (idty + z11) * z21i
             z11_minus_i__times_z21i = (z11 - idty) * z21i
@@ -219,12 +218,12 @@ class TwoNPortMatrix(NPortMatrixBase):
             # via scattering parameters
             s = self.convert(S).nportmatrix()
             z = s.convert(Z)
-            return z.twonportmatrix()            
+            return z.twonportmatrix()
         elif self.type == Y and type == T:
-            y11 = np.asmatrix(self[0,0]) * z0
-            y12 = np.asmatrix(self[0,1]) * z0
-            y21 = np.asmatrix(self[1,0]) * z0
-            y22 = np.asmatrix(self[1,1]) * z0
+            y11 = np.asmatrix(self[0, 0]) * z0
+            y12 = np.asmatrix(self[0, 1]) * z0
+            y21 = np.asmatrix(self[1, 0]) * z0
+            y22 = np.asmatrix(self[1, 1]) * z0
             y21i = np.linalg.inv(y21)
             i_plus_y11__times_y21i = (idty + y11) * y21i
             i_minus_y11__times_y21i = (idty - y11) * y21i
@@ -360,13 +359,13 @@ class TwoNPort(NPortBase):
             converted.append(twonportmatrix.convert(type, z0))
         return TwoNPort(self.freqs, converted, type, z0)
 
-    #~ def invert(self):
-        #~ """Return a TwoNPort described by the inverse of this TwoNPort's
-        #~ matrices
-        
-        #~ """
-        #~ inverted = []
-        #~ for matrix in self:
-            #~ nportmatrix = NPortMatrix(matrix, self.type, self.z0)
-            #~ inverted.append(np.linalg.inv(nportmatrix))
-        #~ return NPort(self.freqs, inverted, self.type, self.z0)
+        # ~ def invert(self):
+        # ~ """Return a TwoNPort described by the inverse of this TwoNPort's
+        # ~ matrices
+
+        # ~ """
+        # ~ inverted = []
+        # ~ for matrix in self:
+        # ~ nportmatrix = NPortMatrix(matrix, self.type, self.z0)
+        # ~ inverted.append(np.linalg.inv(nportmatrix))
+        # ~ return NPort(self.freqs, inverted, self.type, self.z0)

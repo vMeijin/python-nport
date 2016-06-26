@@ -1,9 +1,7 @@
-
-from __future__ import division
+import collections
 
 import numpy as np
 from scipy import interpolate
-
 
 # parameter matrix types
 Z = IMPEDANCE = TYPE_Z = 'Z'
@@ -15,13 +13,13 @@ G = INVERSE_HYBRID = TYPE_G = 'G'
 ABCD = TRANSMISSION = TYPE_ABCD = 'ABCD'
 
 
-#~ class MatrixTypeError(Exception):
-    #~ """Inappropriate parameter matrix type"""
-    #~ def __init__(self, given, expected):
-        #~ self.given = given
-        #~ self.expected = expected
-    #~ def __str__(self):
-        #~ return "given type %s does not match expected type %s" % (self.given, self.expected)
+# ~ class MatrixTypeError(Exception):
+# ~ """Inappropriate parameter matrix type"""
+# ~ def __init__(self, given, expected):
+# ~ self.given = given
+# ~ self.expected = expected
+# ~ def __str__(self):
+# ~ return "given type %s does not match expected type %s" % (self.given, self.expected)
 
 
 class NPortMatrixBase(np.ndarray):
@@ -35,6 +33,7 @@ class NPortMatrixBase(np.ndarray):
     :type z0: :class:`float`
 
     """
+
     # TODO: implement type checking for operations (as in NPortBase)
     def __new__(cls, matrix, type, z0=None):
         # http://docs.scipy.org/doc/numpy/user/basics.subclassing.html
@@ -72,7 +71,7 @@ class NPortMatrixBase(np.ndarray):
         return '%s(%s)\n %s' % (self.__class__.__name__,
                                 attrs,
                                 array_repr)
-    
+
     def __array_finalize__(self, obj):
         if obj is None: return
         self.type = getattr(obj, 'type', None)
@@ -80,11 +79,11 @@ class NPortMatrixBase(np.ndarray):
 
     def __reduce__(self):
         object_state = list(np.ndarray.__reduce__(self))
-        subclass_state = (self.type, self.z0, )
+        subclass_state = (self.type, self.z0,)
         object_state[2] = (object_state[2], subclass_state)
         return tuple(object_state)
-    
-    def __setstate__(self,state):
+
+    def __setstate__(self, state):
         nd_state, own_state = state
         np.ndarray.__setstate__(self, nd_state)
         self.type, self.z0 = own_state
@@ -163,10 +162,11 @@ class NPortBase(NPortMatrixBase):
 
     """
     matrix_cls = NPortMatrixBase
-    
+
     def __metaclass__(cname, cbases, cdict):
         # http://thread.gmane.org/gmane.comp.python.general/373788/focus=373795
         P = type(cname, cbases, cdict)
+
         def make_op(name, func):
             def op(this, other):
                 if issubclass(type(other), NPortBase):
@@ -183,7 +183,7 @@ class NPortBase(NPortMatrixBase):
                     result_freqs.sort()
                     result_freqs = \
                         np.array(result_freqs[result_freqs.index(min_freq):
-                                              result_freqs.index(max_freq)+1])
+                        result_freqs.index(max_freq) + 1])
                     this_matrices = this.at(result_freqs)
                     other_matrices = other.at(result_freqs)
                     result_matrices = func(this_matrices, other_matrices)
@@ -195,11 +195,14 @@ class NPortBase(NPortMatrixBase):
                 subclass = type(this)
                 return subclass(result_freqs, result_matrices, result_type,
                                 result_z0)
+
             op.__name__ = name
             return op
-        for name, func in np.ndarray.__dict__.items():
-            if callable(func) and name in ['__add__', '__sub__', '__mul__',
-                '__div__', '__radd__', '__rsub__', '__rmul__', '__rdiv__']:
+
+        for name, func in list(np.ndarray.__dict__.items()):
+            if isinstance(func, collections.Callable) and name in ['__add__', '__sub__', '__mul__',
+                                                                   '__div__', '__radd__', '__rsub__', '__rmul__',
+                                                                   '__rdiv__']:
                 setattr(P, name, make_op(name, func))
         return P
 
@@ -229,11 +232,11 @@ class NPortBase(NPortMatrixBase):
 
     def __reduce__(self):
         object_state = list(super(NPortBase, self).__reduce__())
-        subclass_state = (self.freqs, )
+        subclass_state = (self.freqs,)
         object_state[2] = (object_state[2], subclass_state)
         return tuple(object_state)
-    
-    def __setstate__(self,state):
+
+    def __setstate__(self, state):
         super_state, own_state = state
         super(NPortBase, self).__setstate__(super_state)
         self.freqs, = own_state
@@ -278,8 +281,8 @@ class NPortBase(NPortMatrixBase):
         """
         subclass = type(self)
         return subclass(self.freqs,
-            np.asarray(self[:, (port1 - 1, ), :][:, :, (port2 - 1, )]),
-            self.type, self.z0)
+                        np.asarray(self[:, (port1 - 1,), :][:, :, (port2 - 1,)]),
+                        self.type, self.z0)
 
     def at(self, freqs):
         """Return the linearly interpolated n-port data at the given
@@ -307,7 +310,7 @@ class NPortBase(NPortMatrixBase):
             return interpolated_nport[0]
         else:
             return interpolated_nport
-            
+
     def average(self, n):
         """Take a moving average over `n` frequency samples
         
@@ -318,20 +321,20 @@ class NPortBase(NPortMatrixBase):
         """
         averaged = np.zeros_like(np.asarray(self))
         for i in range(len(self)):
-            for j in range(- int(np.floor(n/2)), int(np.ceil(n/2))):
+            for j in range(- int(np.floor(n / 2)), int(np.ceil(n / 2))):
                 index = i + j
                 if index < 0:
                     index = 0
                 elif index >= len(self):
                     index = len(self) - 1
-                averaged[i] += self[index] / n        
-        # numpy convolve
-        #~ ones = np.ones(n) / n
-        #~ averaged = np.zeros_like(np.asarray(self))
-        #~ for i in range(self.ports):
-            #~ for j in range(self.ports):
-                #~ averaged[:, i, j] = np.convolve(ones, self[:, i, j])
+                averaged[i] += self[index] / n
+                # numpy convolve
+                # ~ ones = np.ones(n) / n
+                # ~ averaged = np.zeros_like(np.asarray(self))
+                # ~ for i in range(self.ports):
+                # ~ for j in range(self.ports):
+                # ~ averaged[:, i, j] = np.convolve(ones, self[:, i, j])
         # or scipy convolve
-        #~ averaged = scipy.signal.convolve(np.ones((n, ) + self.shape[1:])/n, np.asarray(self), 'same')
+        # ~ averaged = scipy.signal.convolve(np.ones((n, ) + self.shape[1:])/n, np.asarray(self), 'same')
         subclass = type(self)
         return subclass(self.freqs, averaged, self.type, self.z0)
