@@ -194,7 +194,7 @@ def eigenshuffle(Asequence):
         # were consistent if possible
         S = np.squeeze(np.sum(Vseq[i - 1] * Vseq[i], 0).real) < 0
 
-        Vseq[i] = Vseq[i] * (-S * 2 - 1)
+        Vseq[i] = Vseq[i] * (~S * 2 - 1)
 
     return Dseq, Vseq
 
