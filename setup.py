@@ -9,20 +9,8 @@ setuptools setup script for nport
 from setuptools import setup
 from subprocess import Popen, PIPE
 
-# write the git version to nport/version.py
-# based on version.py by Douglas Creager <dcreager@dcreager.net>
-# http://dcreager.net/2010/02/10/setuptools-git-version-numbers/
-try:
-    p = Popen(['git', 'describe', '--abbrev=4'],
-              stdout=PIPE, stderr=PIPE)
-    p.stderr.close()
-    line = p.stdout.readlines()[0].decode("ascii")
-    version = line.strip()[1:]
-except OSError as e:
-    print("A problem occured while trying to run git: \n" +
-          e.strerror + "\n" +
-          "Version information is unavailable!")
-    version = 'unknown'
+
+version = '0.2'
 
 version_file = open('nport/version.py', 'w')
 version_file.write("__version__ = '%s'\n" % version)
